@@ -752,7 +752,8 @@ roll_beta <- function(x, b, rf, n) {
   b_er <- combo$b - combo$rf
   obs <- xts_cbind(x_er, b_er)
   obs <- xts_to_dataframe(obs)
-  rcov <- slider::slide(obs[, -1], ~cov(.x), .before = n-1, .complete = TRUE)
+  rcov <- slider::slide(obs[, -1, drop = FALSE], ~cov(.x), .before = n-1,
+                        .complete = TRUE)
   xbeta <- lapply(rcov, \(x) {x[, ncol(x)] / x[ncol(x), ncol(x)]})
   xbeta <- do.call('rbind', xbeta)
   xts(xbeta, obs$Date[n:nrow(obs)])
@@ -766,7 +767,7 @@ roll_r2 <- function(x, b, n) {
   }
   combo <- clean_asset_bench_rf(x, b)
   obs <- xts_to_dataframe(xts_cbind(combo$x, combo$b))
-  rcor <- slider::slide(obs[, -1], ~cor(.x), .before = n-1, .complete = TRUE)
+  rcor <- slider::slide(obs[, -1, drop = FALSE], ~cor(.x), .before = n-1, .complete = TRUE)
   rcor <- lapply(rcor, \(x) {x[, nrow(x)]})
   xcor <- do.call("rbind", rcor)
   xts(xcor^2, obs$Date[n:nrow(obs)])
@@ -782,7 +783,7 @@ roll_ret <- function(x, n, b = NULL, period = "days") {
   if (!is.null(b)) {
     x <- excess_ret(x, b)
   }
-  obs <- xts_to_dataframe(x)[, -1]
+  obs <- xts_to_dataframe(x)[, -1, drop = FALSE]
   if (n > freq_to_scaler(period)) {
     rl <- slider::slide(obs, ~calc_geo_ret(.x, period), .before = n-1,
                         .complete = TRUE)
@@ -800,7 +801,7 @@ roll_vol <- function(x, n, b = NULL, period = "days") {
   if (!is.null(b)) {
     x <- excess_ret(x, b)
   }
-  obs <- xts_to_dataframe(x)[, -1]
+  obs <- xts_to_dataframe(x)[, -1, drop = FALSE]
   rl <- slider::slide(obs, ~calc_vol(.x, period), .before = n - 1,
                       .complete = TRUE)
   rv <- do.call("rbind", rl)
@@ -813,7 +814,7 @@ roll_down_vol <- function(x, n, b = NULL, period = "days") {
   if (!is.null(b)) {
     x <- excess_ret(x, b)
   }
-  obs <- xts_to_dataframe(x)[, -1]
+  obs <- xts_to_dataframe(x)[, -1, drop = FALSE]
   rl <- slider::slide(obs, ~calc_down_vol(.x, period), .before = n - 1,
                       .complete = TRUE)
   rv <- do.call("rbind", rl)
@@ -825,7 +826,7 @@ roll_style <- function(x, b, n) {
   combo <- clean_asset_bench_rf(x, b)
   x <- xts_to_dataframe(combo$x)
   b <- xts_to_dataframe(combo$b)
-  obs <- cbind(x[,-1], b[,-1])
+  obs <- cbind(x[,-1, drop = FALSE], b[,-1, drop = FALSE])
   colnames(obs)[1] <- colnames(x)[2]
   r_sty <- slider::slide(obs, ~te_min_qp(.x[, 1], .x[, 2:ncol(obs)])$solution,
                          .before = n-1, .complete = TRUE)
