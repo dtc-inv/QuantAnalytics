@@ -357,8 +357,11 @@ read_xts <- function(wb, sht = 1, skip = 0) {
 clean_asset_bench_rf <- function(x, b, rf = NULL, freq = NULL,
                                  date_start = NULL, date_end = NULL) {
   if (is.null(freq)) {
-    freq <- sort(c(guess_freq(x), guess_freq(b), guess_freq(rf)), na.last = TRUE,
-                 decreasing = TRUE)
+    fguess <- c(guess_freq(x), guess_freq(b))
+    if (!is.null(rf)) {
+      fguess <- c(fguess, guess_freq(rf))
+    }
+    freq <- sort(fguess, na.last = TRUE,decreasing = TRUE)
   }
   if (freq[1] == "M") {
     x <- change_freq(x)
