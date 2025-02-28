@@ -490,6 +490,7 @@ clean_ret <- function(x, trunc_start = TRUE, trunc_end = TRUE, eps = 0.05,
                    observations."))
   } else {
     miss <- xts()
+    ret <- x
   }
   res <- list()
   res$ret <- ret
