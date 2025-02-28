@@ -4,7 +4,7 @@
 \alias{xts_cbind_inter}
 \title{Column bind the intersection of two xts objects}
 \usage{
-xts_cbind_inter(x, y)
+xts_cbind_inter(x, y, eps = 0.05)
 }
 \arguments{
 \item{x}{xts object}
@@ -13,7 +13,7 @@ xts_cbind_inter(x, y)
 }
 \value{
 list containing intersection of returns and columns that were removed
-  due to too many missing values (if any)
+  due to too many missing values (if any).
 }
 \description{
 Column bind the intersection of two xts objects
@@ -21,5 +21,5 @@ Column bind the intersection of two xts objects
 \details{
 The first common start date and last common end date are used to find the
 interection of returns. The returns are also cleaned for missing columns.
-See rm_na_col for more info.
+See `clean_ret` for more info.
 }

@@ -4,12 +4,12 @@
 \alias{calc_geo_ret}
 \title{Calculate geometric return}
 \usage{
-calc_geo_ret(x, period)
+calc_geo_ret(x, freq)
 }
 \arguments{
 \item{x}{xts object}
 
-\item{period}{days, weeks, months, quarters to annualize return}
+\item{freq}{days, weeks, months, quarters to annualize return}
 }
 \value{
 vector of geometric returns

@@ -12,3 +12,10 @@ unsmooth_ret(x)
 \description{
 Unsmooth serially auto-correlated returns
 }
+\note{
+Ru = R - R_lag * rho / (1 - rho)
+Ru = unsmoothed return
+R = return
+R_lag = one period lagged return
+rho = correlation b/t R and R_lag
+}

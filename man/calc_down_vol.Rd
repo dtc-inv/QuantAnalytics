@@ -4,14 +4,15 @@
 \alias{calc_down_vol}
 \title{Calculate Downside Volatiltiy}
 \usage{
-calc_down_vol(x, period, mar = 0)
+calc_down_vol(x, freq, mar = 0)
 }
 \arguments{
 \item{x}{xts object}
 
-\item{period}{days, weeks, months, quarters to annualize volatiltiy}
+\item{freq}{days, weeks, months, quarters to annualize volatility}
 
-\item{mar}{default `0`, sets min acceptable return to subset downside volatility}
+\item{mar}{default `0`, sets min acceptable return to subset downside
+volatility}
 }
 \value{
 vector of downside volatility

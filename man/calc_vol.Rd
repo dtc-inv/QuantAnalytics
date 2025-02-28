@@ -4,12 +4,12 @@
 \alias{calc_vol}
 \title{Calculate Volatiltiy}
 \usage{
-calc_vol(x, period)
+calc_vol(x, freq)
 }
 \arguments{
 \item{x}{xts object}
 
-\item{period}{days, weeks, months, quarters to annualize volatiltiy}
+\item{freq}{days, weeks, months, quarters to annualize volatiltiy}
 }
 \value{
 vector of volatility

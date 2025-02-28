@@ -2,10 +2,17 @@
 % Please edit documentation in R/util_time_series.R
 \name{last_us_trading_day}
 \alias{last_us_trading_day}
-\title{Get Last U.S. Trading Day}
+\title{Get Most Recent U.S. Trading Day}
 \usage{
-last_us_trading_day()
+last_us_trading_day(as_of = NULL)
+}
+\arguments{
+\item{as_of}{optional as of date, leave NULL for today.}
 }
 \description{
-Get Last U.S. Trading Day
+Get Most Recent U.S. Trading Day
+}
+\details{
+Returns the most recent completed trading day. E.g., if yesterday
+was a trading day then it will return yesterday.
 }

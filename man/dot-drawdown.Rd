@@ -2,7 +2,7 @@
 % Please edit documentation in R/quant.R
 \name{.drawdown}
 \alias{.drawdown}
-\title{Drawdown utility function}
+\title{Drawdown utility function for calc_drawdown}
 \usage{
 .drawdown(x)
 }
@@ -10,5 +10,5 @@
 \item{x}{xts object}
 }
 \description{
-Drawdown utility function
+Drawdown utility function for calc_drawdown
 }

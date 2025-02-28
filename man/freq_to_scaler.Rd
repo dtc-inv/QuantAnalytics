@@ -4,14 +4,18 @@
 \alias{freq_to_scaler}
 \title{Change Character Frequency into Numeric Scaler}
 \usage{
-freq_to_scaler(period)
+freq_to_scaler(freq)
 }
 \arguments{
-\item{period}{days, weeks, months, quarters, years}
+\item{freq}{string: days, weeks, months, quarters, years}
 }
 \value{
 corresponding numeric value, e.g., months = 12
 }
 \description{
 Change Character Frequency into Numeric Scaler
+}
+\examples{
+freq_to_scaler("months")
+
 }

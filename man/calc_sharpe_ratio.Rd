@@ -4,14 +4,14 @@
 \alias{calc_sharpe_ratio}
 \title{Calculate Sharpe Ratio}
 \usage{
-calc_sharpe_ratio(x, rf, period)
+calc_sharpe_ratio(x, rf, freq)
 }
 \arguments{
 \item{x}{xts object}
 
 \item{rf}{xts with risk-free time-series}
 
-\item{period}{days, weeks, months, quarters to annaulize return and risk}
+\item{freq}{days, weeks, months, quarters to annaulize return and risk}
 }
 \value{
 vector of Sharpe Ratios
@@ -21,5 +21,5 @@ Calculate Sharpe Ratio
 }
 \note{
 The function doesn't test to see if `x` and `rf` are for intersecting
-time periods.
+time freqs.
 }

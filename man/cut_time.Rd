@@ -13,6 +13,9 @@ cut_time(x, date_start = NULL, date_end = NULL)
 
 \item{date_end}{optional ending date to truncate time-series}
 }
+\value{
+truncated xts
+}
 \description{
 Truncate time-series with start and end dates
 }
@@ -20,14 +23,16 @@ Truncate time-series with start and end dates
 If neither date_start or date_end are entered the original
 time series, x, will be returned. The date_start and date_end
 parameters are inclusive, i.e., the date_start will be the first
-date in the time-series.
+date in the time-series. Note dates can be Date objects or "YYYY-MM-DD"
+strings.
 }
 \examples{
-\dontrun{
-data(etf_ret)
-# cut time-series to start in Feb 1, 2010 and end on June 30, 2010
-cut_time(etf_ret, '2010-02-01', '2010-06-30')
-# leave beginning of time-serie as is, end on June 30, 2010
-cut_time(etf_ret, NULL, '2010-06-30')
-}
+data(assets)
+# cut time-series to start in Feb 1, 2014 and end on June 30, 2014
+x_cut <- cut_time(x, '2014-02-01', '2014-06-30')
+head(x)
+tail(x)
+# leave beginning of time-serie as is, end on June 30, 2014
+cut_time(x, NULL, '2014-06-30')
+tail(x)
 }

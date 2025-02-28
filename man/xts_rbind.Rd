@@ -2,26 +2,32 @@
 % Please edit documentation in R/util_time_series.R
 \name{xts_rbind}
 \alias{xts_rbind}
-\title{Row bind xts}
+\title{Row bind two xts objects}
 \usage{
 xts_rbind(new, old, is_xts = TRUE, backfill = FALSE)
 }
 \arguments{
-\item{new}{older time-series}
+\item{new}{xts with older time-series}
 
-\item{old}{newer time-series}
+\item{old}{xts with newer time-series}
 
-\item{is_xts}{boolean, if set to FALSE, assumes new and old are data.frames
-with `Date` column}
+\item{is_xts}{boolean, default is TRUE for new and old to be xts objects.
+If set to FALSE, assumes `new` and `old` are data.frames with dates in
+first column named `Date`. See `xts_to_dataframe` and `dataframe_to_xts`}
 
 \item{backfill}{if set to TRUE missing values of new will be filled with old}
 }
+\value{
+xts with combined rows
+}
 \description{
-Row bind xts
+Row bind two xts objects
 }
 \details{
 For any overlapping dates, the old xts will be overwritten by the new xts.
 The function will align the intersection of column names for the old and new
-xts objects. For any column names that do not intersect NAs will be added
-to the new or old xts depending on which xts is missing the column name(s).
+xts objects. If backfill is set to TRUE, then missing new values will be
+over-written with the overlapping old data. For any column names that
+do not intersect NAs will be added to the new or old xts depending on which
+xts is missing the data.
 }

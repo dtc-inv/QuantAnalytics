@@ -4,10 +4,11 @@
 \alias{calc_down_capture}
 \title{Calculate Downside Capture}
 \usage{
-calc_down_capture(mgr, bench, period, mar = 0)
+calc_down_capture(mgr, bench, freq, mar = 0)
 }
 \arguments{
-\item{mgr}{xts object of manager / asset / security / etc to calculate downside capture}
+\item{mgr}{xts object of manager / asset / security / etc to calculate
+downside capture}
 
 \item{bench}{xts object of benchmark}
 
@@ -20,5 +21,6 @@ vector of downside capture
 Calculate Downside Capture
 }
 \details{
-Geometric return of manager / geometric return of benchmark when benchmark is up
+Geometric return of manager / geometric return of benchmark when benchmark
+  is down
 }

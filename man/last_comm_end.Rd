@@ -2,10 +2,22 @@
 % Please edit documentation in R/util_time_series.R
 \name{last_comm_end}
 \alias{last_comm_end}
-\title{Find last common end date}
+\title{Find intersect end date}
 \usage{
 last_comm_end(x)
 }
+\arguments{
+\item{x}{xts}
+}
+\value{
+Date representing common ending date of multiple assets.
+}
 \description{
-Find last common end date
+Find intersect end date
+}
+\examples{
+data(assets)
+x[nrow(x), 1] <- NA
+tail(x)
+last_comm_end(x)
 }

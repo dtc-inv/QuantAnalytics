@@ -16,5 +16,12 @@ xts of returns
 Convert price time-series to a return
 }
 \details{
-Return is defined by period over period change
+Return is defined by period over period change.
+}
+\examples{
+data(assets)
+price <- ret_to_price(x[, 1:3])
+head(price)
+ret <- price_to_ret(price)
+head(ret)
 }

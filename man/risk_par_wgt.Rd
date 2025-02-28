@@ -9,6 +9,14 @@ risk_par_wgt(ret)
 \arguments{
 \item{ret}{xts of returns}
 }
+\value{
+vector of risk parity weights
+}
 \description{
 Calculate Risk Parity Weights
+}
+\examples{
+w <- risk_par_wgt(x)
+w
+risk_wgt(w, cov(x))
 }

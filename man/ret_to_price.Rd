@@ -11,6 +11,12 @@ ret_to_price(x)
 }
 \value{
 a price index calculating from \code{x} and a initial value of 1
+#' @examples
+data(assets)
+price <- ret_to_price(x[, 1:3])
+head(price)
+ret <- price_to_ret(price)
+head(ret)
 }
 \description{
 Convert returns to a price index

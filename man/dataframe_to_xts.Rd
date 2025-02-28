@@ -4,8 +4,21 @@
 \alias{dataframe_to_xts}
 \title{Convert dataframe to xts}
 \usage{
-dataframe_to_xts(df)
+dataframe_to_xts(xdf)
+}
+\arguments{
+\item{xdf}{data.frame with dates in first column}
+}
+\value{
+xts
 }
 \description{
 Convert dataframe to xts
+}
+\examples{
+data(assets)
+my_df <- xts_to_dataframe(x)
+my_xts <- dataframe_to_xts(my_df)
+head(my_df)
+head(my_xts)
 }

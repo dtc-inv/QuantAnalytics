@@ -12,3 +12,8 @@ xts_to_tidy(x)
 \description{
 Convert xts to tidy (long) data.frame
 }
+\examples{
+data(assets)
+tidy_df <- xts_to_tidy(x)
+head(tidy_df)
+}

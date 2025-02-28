@@ -4,18 +4,33 @@
 \alias{change_freq}
 \title{Change time-series frequency}
 \usage{
-change_freq(x, period = "months", dtype = c("return", "price"))
+change_freq(x, freq = "months", dtype = c("return", "price"))
 }
 \arguments{
 \item{x}{xts object}
 
-\item{period}{character string of the desired time-series periods}
+\item{freq}{character string of the desired time-series periods: days,
+weeks, months, quarters, or years}
 
-\item{dtype}{character string of "return" or "price" to represent the data type}
+\item{dtype}{character string of "return" or "price" to represent the
+data type}
 }
 \value{
 xts object with new frequency
 }
 \description{
 Change time-series frequency
+}
+\details{
+most recent period will be all the returns available for that
+  period. E.g., if changing to annaul returns the last year will be YTD.
+  If the first year of data is not for a full year it will not be included.
+}
+\examples{
+data(assets)
+# annual returns
+x <- x["2020-06/", 1:3]
+head(x)
+tail(x)
+change_freq(x, freq = "years")
 }

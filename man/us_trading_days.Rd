@@ -17,3 +17,6 @@ sequence of trading days
 \description{
 Get US Trading Days based on NYSE Holidays
 }
+\examples{
+us_trading_days("2020-01-01", "2020-01-07")
+}
