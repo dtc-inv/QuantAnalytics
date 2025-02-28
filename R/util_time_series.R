@@ -454,10 +454,12 @@ clean_asset_bench_rf <- function(x, b, rf = NULL, freq = NULL,
 #' @param trunc_end boolean to truncate at intersection of end dates
 #' @param eps threshold of missing values tolerated. See details and
 #'   examples.
+#' @param ret_fill numeric value to fill missing returns within threshold,
+#'   see details.
 #' @details Default `eps` is 0.05 meaning that if more than 5% of the number
 #'   of observations (rows) for each field (column) are missing then the
 #'   column is removed. Otherwise, if 5% or less of observations are missing,
-#'   then missing values are filled with zeros.
+#'   then missing values are filled with `ret_fill` (zero by default).
 #' @examples
 #' x <- x[1:10, 1:3]
 #' x[2:6, 1] <- NA
@@ -466,7 +468,8 @@ clean_asset_bench_rf <- function(x, b, rf = NULL, freq = NULL,
 #' res$ret
 #' res$miss
 #' @export
-clean_ret <- function(x, trunc_start = TRUE, trunc_end = TRUE, eps = 0.05) {
+clean_ret <- function(x, trunc_start = TRUE, trunc_end = TRUE, eps = 0.05,
+                      ret_fill = 0) {
   if (trunc_start) {
     x <- x[paste0(first_comm_start(x), "/")]
   }
@@ -474,16 +477,19 @@ clean_ret <- function(x, trunc_start = TRUE, trunc_end = TRUE, eps = 0.05) {
     x <- x[paste0("/", last_comm_end(x))]
   }
   miss_col <- colSums(is.na(x)) > floor(eps * nrow(x))
-  x[is.na(x)] <- 0
+  x[is.na(x)] <- ret_fill
   if (all(miss_col)) {
     ret <- xts()
     miss <- x
     warning("all returns are missing")
-  } else {
+  } else if (any(miss_col)) {
     ret <- x[, !miss_col]
     miss <- x[, miss_col]
-    warning(paste0(paste0(colnames(x)[miss_col], collapse = " ,"), "
-                   exceeded eps threshold for missing observations."))
+    miss_nm <- paste0(paste0(colnames(x)[miss_col], collapse = " ,"))
+    warning(paste0(miss_nm, " exceeded eps threshold for missing
+                   observations."))
+  } else {
+    miss <- xts()
   }
   res <- list()
   res$ret <- ret
