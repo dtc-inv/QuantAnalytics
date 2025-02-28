@@ -380,7 +380,8 @@ read_xts <- function(wb, sht = 1, skip = 0) {
 #' @param x xts object of asset(s)
 #' @param b xts object of benchmark(s)
 #' @param rf optional xts object of risk-free time-series
-#' @param freq string return frequency: days, weeks, months, quarters, years
+#' @param freq string return frequency: days, weeks, months, quarters, years,
+#'   see details
 #' @param date_start date representing first date. See details.
 #' @param date_end date representing most recent date. See details.
 #' @param eps percent of missing values (NAs) to allow, default is 0.05 for 5%.
@@ -393,7 +394,8 @@ read_xts <- function(wb, sht = 1, skip = 0) {
 #'   time-series accordingly. `eps` sets the bar for how many missing values
 #'   are allowed per column. The default is 5%, if a column has more than 5%
 #'   of the observations are missing the column is removed. Otherwise the
-#'   missing values are filled with zero.
+#'   missing values are filled with zero. If frequency is entered returns will
+#'   be changed to desired frequency, otherwise leave `NULL` to not alter.
 #' @return list with $x for asset(s), $b for benchmark(s), and $rf if
 #' risk-free is entered.
 #' @examples
@@ -407,20 +409,12 @@ read_xts <- function(wb, sht = 1, skip = 0) {
 clean_asset_bench_rf <- function(x, b, rf = NULL, freq = NULL,
                                  date_start = NULL, date_end = NULL,
                                  eps = 0.05) {
-  if (is.null(freq)) {
-    freq <- c(guess_freq(x), guess_freq(b))
+  if (!is.null(freq)) {
+    x <- change_freq(x, freq)
+    b <- change_freq(b, freq)
     if (!is.null(rf)) {
-      freq <- c(guess_freq(rf), freq)
+      rf <- change_freq(rf, freq)
     }
-  }
-  freq <- factor(freq, levels = c("days", "weeks", "months",
-                                  "quarters", "years"))
-  freq <- sort(freq, decreasing = TRUE)[1]
-  freq <- check_freq(freq)
-  x <- change_freq(x, freq)
-  b <- change_freq(b, freq)
-  if (!is.null(rf)) {
-    rf <- change_freq(rf, freq)
   }
   combo <- xts_cbind_inter(x, b)
   if (!is.null(colnames(combo$miss_ret))) {
