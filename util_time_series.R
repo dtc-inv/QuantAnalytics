@@ -408,9 +408,14 @@ clean_asset_bench_rf <- function(x, b, rf = NULL, freq = NULL,
                                  date_start = NULL, date_end = NULL,
                                  eps = 0.05) {
   if (is.null(freq)) {
-    freq <- sort(c(guess_freq(x), guess_freq(b), guess_freq(rf)),
-                 na.last = TRUE, decreasing = TRUE)
+    freq <- c(guess_freq(x), guess_freq(b))
+    if (!is.null(rf)) {
+      freq <- c(guess_freq(rf), freq)
+    }
   }
+  freq <- factor(freq, levels = c("days", "weeks", "months",
+                                  "quarters", "years"))
+  freq <- sort(freq, decreasing = TRUE)[1]
   freq <- check_freq(freq)
   x <- change_freq(x, freq)
   b <- change_freq(b, freq)
@@ -541,9 +546,10 @@ month_end <- function(dt) {
 guess_freq <- function(x) {
   freq <- try(periodicity(x))
   if ("try-error" %in% class(x)) {
-    stop("Could not guess frequency.")
+    warning("Could not guess frequency.")
+    return(NA)
   } else {
-    tolower(freq$scale)
+    tolower(freq$units)
   }
 }
 
