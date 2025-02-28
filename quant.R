@@ -86,6 +86,12 @@ test_diff <- function(a, b) {
 
 #' @title Unsmooth serially auto-correlated returns
 #' @param x return xts to unsmooth
+#' @note
+#' Ru = R - R_lag * rho / (1 - rho)
+#' Ru = unsmoothed return
+#' R = return
+#' R_lag = one period lagged return
+#' rho = correlation b/t R and R_lag
 #' @export
 unsmooth_ret <- function(x) {
   lag_x <- lag.xts(x)
@@ -93,30 +99,7 @@ unsmooth_ret <- function(x) {
   na.omit((x - lag_x * rho) / (1 - rho))
 }
 
-#' @title Calculate Weighted Harmonic Mean
-#' @param w weight vector
-#' @param x data vector
-#' @export
-wgt_harmonic_mean <- function(w, x) {
-  sum(w, na.rm = TRUE) / sum(w / x, na.rm = TRUE)
-}
-
-#' @title Calculate Weighted Harmonic Mean of a Ratio in a data.frame
-#' @param tbl_hold data.frame
-#' @param x column name that contains the ratio
-#' @param w column name that contains the weights
-#' @details excludes missing and negative ratio and reconstitutes the weights
-#' @export
-calc_wgt_multiple <- function(tbl_hold, x = "PE", w = "CapWgt") {
-  miss <- is.na(tbl_hold[, x])
-  tbl_hold <- tbl_hold[!miss, ]
-  neg_earn <- tbl_hold[, x] < 0
-  tbl_hold <- tbl_hold[!neg_earn, ]
-  tbl_hold[, w] <- tbl_hold[, w] / sum(tbl_hold[, w], na.rm = TRUE)
-  wgt_harmonic_mean(tbl_hold[, w], tbl_hold[, x])
-}
-
-# port ----
+# Port calcs ----
 
 #' @title Calculate Volatility or TE Weights
 #' @param x vector of weights corresponding to `cov_mat`
@@ -180,7 +163,6 @@ port_corr <- function(wgt_vec_1, wgt_vec_2, cov_mat) {
     (sqrt(t(w1) %*% cov_mat %*% w1) * sqrt(t(w2) %*% cov_mat %*% w2))
 }
 
-
 #' @title Beta between two portfolios
 #' @param wgt_vec_1 weight vector of 1st portfolio
 #' @param wgt_vec_2 weight vector of 2nd portfolio
@@ -192,41 +174,13 @@ port_beta <- function(wgt_vec_1, wgt_vec_2, cov_mat) {
   (t(w2) %*% cov_mat %*% w1) / (t(w2) %*% cov_mat %*% w2)
 }
 
-
-#' @title Cluster around latents
-#' @param cor_mat correlation matrix
-#' @export
-pca_hclust <- function(cor_mat) {
-  p <- princomp(covmat = cor_mat)
-  meas <- diag(p$sdev) %*% t(p$loadings[,])
-  dist_res <- dist(t(meas), method = 'euclidean')
-  hclust(dist_res)
-}
-
-
-#' @title Calculate risk cluster weights
-#' @param hc tree from hclust output
-#' @param vol volatility of assets used in hc calculation
-#' @param k number of clusters
-#' @export
-risk_cluster_wgt <- function(hc, vol, k = 2) {
-
-  n_assets <- max(hc$order)
-  memb <- cutree(hc, k)
-  xcor <- diag(1, n_assets, n_assets)
-  for (i in 1:k) {
-    xcor[memb == i, memb == i] <- 1
-  }
-  vol <- matrix(vol, ncol = 1)
-  xcov <- vol %*% t(vol) * xcor
-  mu_vec <- vol * 0.25
-  cov_inv <- MASS::ginv(xcov)
-  (cov_inv %*% mu_vec) /
-    (matrix(1, ncol = length(hc$order), nrow = 1) %*% cov_inv %*% mu_vec)[1]
-}
-
 #' @title Calculate Risk Parity Weights
 #' @param ret xts of returns
+#' @return vector of risk parity weights
+#' @examples
+#' w <- risk_par_wgt(x)
+#' w
+#' risk_wgt(w, cov(x))
 #' @export
 risk_par_wgt <- function(ret) {
   sigma <- cov(ret)
@@ -294,7 +248,6 @@ absorp_ratio <- function(xcor, n_pc = NULL) {
   sum(eig_res$values[1:2]) / sum(eig_res$values)
 }
 
-
 # MPT calcs ----
 
 #' @title Calculate Peak to Trough Drawdowns
@@ -302,23 +255,19 @@ absorp_ratio <- function(xcor, n_pc = NULL) {
 #' @return xts of drawdown time-series
 #' @export
 calc_drawdown <- function(x) {
-
   x <- na.omit(x)
   dd <- apply(x, 2, .drawdown)
   xts(dd, as.Date(rownames(dd), origin = '1970-01-01'))
 }
 
-
-#' @title Drawdown utility function
+#' @title Drawdown utility function for calc_drawdown
 #' @param x xts object
 #' @export
 .drawdown <- function(x) {
-
   wi <- cumprod(x + 1)
   wi_peak <- cummax(wi)
   wi / wi_peak - 1
 }
-
 
 #' @title Calculate Worst Drawdown
 #' @param x xts
@@ -328,7 +277,6 @@ calc_max_drawdown <- function(x) {
   dd <- calc_drawdown(x)
   apply(dd, 2, min)
 }
-
 
 #' @title Find all the drawdowns of a time-series
 #' @param x univariate xts, if more than one column is passed only the first
@@ -347,8 +295,10 @@ find_drawdowns <- function(x) {
   colnames(dd) <- c('Date', 'Drawdown')
   dd$isDown <- dd[, 2] < 0
   dd$isDownLag <- c(NA, dd[1:(nrow(dd) - 1), 'isDown'])
-  dd$start <- dd$isDown & !dd$isDownLag # change from 0 to negative signals drawdown start
-  dd$end <- !dd$isDown & dd$isDownLag # change from negative back to 0 signals recovery
+  # change from 0 to negative signals drawdown start
+  dd$start <- dd$isDown & !dd$isDownLag
+  # change from negative back to 0 signals recovery
+  dd$end <- !dd$isDown & dd$isDownLag
   start_date <- dd[dd$start, 1]
   end_date <- dd[dd$end, 1]
   # if lengths of start and end dates are the same the time-series ends on
@@ -384,7 +334,8 @@ find_drawdowns <- function(x) {
   .get_min_dd <- function(x) {
     # find trough by finding which observation equals the minimum
     indx <- which(x[, 2] == min(x[, 2]))
-    # if there are more than one observations equal to the minimum take the first one
+    # if there are more than one observations equal to the minimum take the
+    # first one
     if (length(indx) > 1) {
       indx <- indx[1]
     }
@@ -403,7 +354,6 @@ find_drawdowns <- function(x) {
   return(res)
 }
 
-
 #' @title Calculate excess return (x - b)
 #' @param x xts object to transform into excess return
 #' @param b univariate xts object of benchmark or risk-free rate to subtract
@@ -413,14 +363,13 @@ excess_ret <- function(x, b) {
   x - b[, rep(1, ncol(x))]
 }
 
-
 #' @title Calculate geometric return
 #' @param x xts object
-#' @param period days, weeks, months, quarters to annualize return
+#' @param freq days, weeks, months, quarters to annualize return
 #' @return vector of geometric returns
 #' @export
-calc_geo_ret <- function(x, period) {
-  a <- freq_to_scaler(period)
+calc_geo_ret <- function(x, freq) {
+  a <- freq_to_scaler(freq)
   obs <- nrow(x)
   r <- apply(x + 1, 2, prod)
   if (obs > a) {
@@ -430,14 +379,13 @@ calc_geo_ret <- function(x, period) {
   }
 }
 
-
 #' @title Calculate Volatiltiy
 #' @param x xts object
-#' @param period days, weeks, months, quarters to annualize volatiltiy
+#' @param freq days, weeks, months, quarters to annualize volatiltiy
 #' @return vector of volatility
 #' @export
-calc_vol <- function(x, period) {
-  a <- freq_to_scaler(period)
+calc_vol <- function(x, freq) {
+  a <- freq_to_scaler(freq)
   apply(x, 2, sd) * sqrt(a)
 }
 
@@ -445,31 +393,32 @@ calc_vol <- function(x, period) {
 #' @title Calculate Sharpe Ratio
 #' @param x xts object
 #' @param rf xts with risk-free time-series
-#' @param period days, weeks, months, quarters to annaulize return and risk
+#' @param freq days, weeks, months, quarters to annaulize return and risk
 #' @note
 #' The function doesn't test to see if `x` and `rf` are for intersecting
-#' time periods.
+#' time freqs.
 #' @return vector of Sharpe Ratios
 #' @export
-calc_sharpe_ratio <- function(x, rf, period) {
-  x_geo <- calc_geo_ret(x, period)
-  rf_geo <- calc_geo_ret(rf, period)
-  x_vol <- calc_vol(x, period)
+calc_sharpe_ratio <- function(x, rf, freq) {
+  x_geo <- calc_geo_ret(x, freq)
+  rf_geo <- calc_geo_ret(rf, freq)
+  x_vol <- calc_vol(x, freq)
   (x_geo - rf_geo) / x_vol
 }
 
 
 #' @title Calculate Downside Volatiltiy
 #' @param x xts object
-#' @param period days, weeks, months, quarters to annualize volatiltiy
-#' @param mar default `0`, sets min acceptable return to subset downside volatility
+#' @param freq days, weeks, months, quarters to annualize volatility
+#' @param mar default `0`, sets min acceptable return to subset downside
+#'   volatility
 #' @details
 #' Downside volatiltiy is the standard devation of returns for the sub-set of
 #' the time-series below the `mar`
 #' @return vector of downside volatility
 #' @export
-calc_down_vol <- function(x, period, mar = 0) {
-  a <- freq_to_scaler(period)
+calc_down_vol <- function(x, freq, mar = 0) {
+  a <- freq_to_scaler(freq)
   res <- rep(NA, ncol(x))
   for (i in 1:ncol(x)) {
     res[i] <- sd(x[x[, i] < mar, i]) * sqrt(a)
@@ -477,21 +426,21 @@ calc_down_vol <- function(x, period, mar = 0) {
   return(res)
 }
 
-
 #' @title Calculate Sortino Ratio
 #' @param x xts object
 #' @param rf xts with risk-free time-series
-#' @param mar default `0`, sets min acceptable return to subset downside volatility
-#' @param period days, weeks, months, quarters to annaulize return and risk
+#' @param mar default `0`, sets min acceptable return to subset downside
+#'   volatility
+#' @param freq days, weeks, months, quarters to annaulize return and risk
 #' @note
 #' The function doesn't test to see if `x` and `rf` are for intersecting
-#' time periods.
+#' time freqs.
 #' @return vector of Sortino Ratios
 #' @export
-calc_sortino_ratio <- function(x, rf, period, mar = 0) {
-  x_geo <- calc_geo_ret(x, period)
-  rf_geo <- calc_geo_ret(rf, period)
-  x_vol <- calc_down_vol(x, period, mar)
+calc_sortino_ratio <- function(x, rf, freq, mar = 0) {
+  x_geo <- calc_geo_ret(x, freq)
+  rf_geo <- calc_geo_ret(rf, freq)
+  x_vol <- calc_down_vol(x, freq, mar)
   (x_geo - rf_geo) / x_vol
 }
 
@@ -515,13 +464,15 @@ calc_batting_avg <- function(x, mar = 0) {
 
 #' @title Calculate Upside Capture
 #' @details
-#' Geometric return of manager / geometric return of benchmark when benchmark is up
-#' @param mgr xts object of manager / asset / security / etc to calculate upside capture
+#' Geometric return of manager / geometric return of benchmark when benchmark
+#'   is up
+#' @param mgr xts object of manager / asset / security / etc to calculate
+#'   upside capture
 #' @param bench xts object of benchmark
 #' @param mar sets place to sub-set up / down, default is `0`
 #' @return vector of upside capture
 #' @export
-calc_up_capture <- function(mgr, bench, period, mar = 0) {
+calc_up_capture <- function(mgr, bench, freq, mar = 0) {
   mgr_up <- mgr[bench >= mar, ]
   bench_up <- bench[bench >= mar, ]
   mgr_geo <- colMeans(mgr_up)
@@ -532,13 +483,15 @@ calc_up_capture <- function(mgr, bench, period, mar = 0) {
 
 #' @title Calculate Downside Capture
 #' @details
-#' Geometric return of manager / geometric return of benchmark when benchmark is up
-#' @param mgr xts object of manager / asset / security / etc to calculate downside capture
+#' Geometric return of manager / geometric return of benchmark when benchmark
+#'   is down
+#' @param mgr xts object of manager / asset / security / etc to calculate
+#'   downside capture
 #' @param bench xts object of benchmark
 #' @param mar sets place to sub-set up / down, default is `0`
 #' @return vector of downside capture
 #' @export
-calc_down_capture <- function(mgr, bench, period, mar = 0) {
+calc_down_capture <- function(mgr, bench, freq, mar = 0) {
   mgr_down <- mgr[bench < mar, ]
   bench_down <- bench[bench < mar, ]
   mgr_geo <- colMeans(mgr_down)
@@ -584,7 +537,6 @@ down_beta <- function(mgr, bench, rf, mar = 0) {
   calc_uni_beta(mgr[is_down, ], bench[is_down, ], rf[is_down, ])
 }
 
-
 #' @title Exponentially Weighted Moving Average Covariance
 #' @param ret xts of returns
 #' @param lamda numeric value to scale weighted average calc
@@ -609,50 +561,17 @@ cov_ewma <- function(ret, lamda = NULL) {
   return(cov_mat)
 }
 
-# MC sim ----
-
-#' @export
-boot_strap <- function(x, n) {
-  is_vec <- is.null(dim(x))
-  if (is_vec) {
-    n_row <- length(x)
-  } else {
-    n_row <- nrow(x)
-  }
-  rand_row <- round(runif(n, 1, n_row), 0)
-  if (is_vec) {
-    return(x[rand_row])
-  } else {
-    return(x[rand_row, ])
-  }
-}
-
-
-#' @export
-block_boot_strap <- function(x, n, block) {
-  x <- as.vector(x)
-  boot_length <- ceiling(n / block)
-  boot_vec <- rep(NA, block * boot_length)
-  rand_row <- round(runif(boot_length, 0, length(x) - block + 1), 0)
-  j <- 1
-  for (i in 1:boot_length) {
-    rand_block <- rand_row[i]:(rand_row[i] + (block - 1))
-    boot_vec[j:(j + (block - 1))] <- x[rand_block]
-    j <- j + block
-  }
-  boot_vec[1:n]
-}
-
 # min TE ----
 
+#' @title Quadratic solver wrapper for minimizing tracking error
+#' @param fund xts of asset to replicate / minimize TE to
+#' @param fact xts of factors / assets to use to try and replicate `fund`
+#' @return results from `quadprog::solve.QP`
 #' @export
-te_min_qp <- function(fund, fact, force_pd = FALSE) {
+te_min_qp <- function(fund, fact) {
 
   n_fact <- ncol(fact)
   cov_fact <- cov(fact)
-  if (force_pd) {
-    cov_fact <- Matrix::nearPD(cov_fact)[[1]]
-  }
   cov_vec <- matrix(nrow = n_fact, ncol = 1)
   for (i in 1:n_fact) {
     cov_vec[i, 1] <- cov(fact[, i], fund)
@@ -664,79 +583,20 @@ te_min_qp <- function(fund, fact, force_pd = FALSE) {
   return(res)
 }
 
-# find n pcs ----
 
-#' @export
-sig_group_sim <- function(ret) {
-
-  xcor <- cor(ret)
-  lamda <- eigen(xcor)$values
-
-  noise_lamda <- matrix(nrow = 1000, ncol = length(lamda))
-  for (i in 1:1000) {
-    noise_ret <- apply(ret, 2, sample, size = nrow(ret), replace = FALSE)
-    noise_lamda[i, ] <- eigen(cor(noise_ret))$values
-  }
-  noise_95 <- apply(noise_lamda, 2, quantile, probs = 0.95)
-  return(sum(lamda > noise_95))
-}
-
-# spline daily / monthly ret ----
-
-
-
-
-#' @export
-summary_stats <- function(fund, bench, rf, period) {
-
-  n_funds <- ncol(fund)
-  combo <- na.omit(cbind(fund, bench, rf))
-  a <- freq_to_scaler(period)
-  if (nrow(combo) > a) {
-    geo_ret <- calc_geo_ret(combo[, 1:(n_funds+1)], period)
-  } else {
-    geo_ret <- apply(combo[, 1:(n_funds+1)] + 1, 2, prod) - 1
-  }
-  xcov <- cov(combo[, 1:(n_funds+1)])
-  vol <- sqrt(diag(xcov) * a)
-  xvar <- PerformanceAnalytics::VaR(combo[, 1:(n_funds+1)]) * sqrt(a / 12)
-  up_capt <- calc_up_capture(combo[, 1:(n_funds+1)], combo[, n_funds + 1], period)
-  down_capt <- calc_down_capture(combo[, 1:(n_funds+1)], combo[, n_funds + 1], period)
-  xbeta <- xcov[, n_funds + 1] / xcov[n_funds + 1, n_funds + 1]
-  ar <- calc_geo_ret(combo[, 1:(n_funds+1)] - combo[, rep(n_funds + 1, n_funds+1)],
-                     period)
-  acov <- cov(combo[, 1:(n_funds+1)] - combo[, rep(n_funds + 1, n_funds+1)])
-  te <- sqrt(diag(acov) * a)
-  ir <- ar / te
-  rf_geo <- calc_geo_ret(combo[, n_funds + 2], period)
-  sharpe <- (geo_ret - rf_geo) / vol
-  sortino <- calc_sortino_ratio(combo[, 1:(n_funds + 1)], combo[, n_funds + 2],
-                                period)
-  dd <- calc_drawdown(combo[, 1:(n_funds + 1)])
-  maxdd <- apply(dd, 2, min)
-  calmar <- geo_ret / -maxdd
-
-  df <- data.frame(
-    Geo.Ret = f_percent(geo_ret, 2),
-    Volatility = f_percent(vol, 2),
-    Beta = f_num(xbeta, 2),
-    VaR.Month.95 = f_percent(as.numeric(xvar), 2),
-    Max.Drawdown = f_percent(maxdd, 2),
-    Sharpe.Ratio = f_num(sharpe, 2),
-    Sortino.Ratio = f_num(sortino, 2),
-    Calmar = f_num(calmar, 2),
-    TE = f_percent(te, 2),
-    Info.Ratio = f_num(ir, 2),
-    Up.Capture = f_percent(up_capt, 2),
-    Down.Capture = f_percent(down_capt, 2)
-  )
-  df <- t(df)
-  colnames(df) <- c(colnames(fund), colnames(bench))
-  return(df)
-}
 
 # roll ----
 
+#' @title Rolling Beta to Common Benchmark
+#' @param x xts of asset returns
+#' @param b xts of benchmark returns (one benchmark)
+#' @param rf xts of risk-free
+#' @param n number of periods for rolling window
+#' @details
+#' Trailing beta to benchmark is calculated for `n` periods. If the data
+#' are monthly then `n` set to 36 is 36 months. The rolling period includes
+#' the current period: e.g., for monthly returns with `n` = 3 on June will
+#' include April, May, and June returns.
 #' @export
 roll_beta <- function(x, b, rf, n) {
   if (ncol(b) > 1) {
@@ -759,6 +619,15 @@ roll_beta <- function(x, b, rf, n) {
   xts(xbeta, obs$Date[n:nrow(obs)])
 }
 
+#' @title Rolling R-squared to Common Benchmark
+#' @param x xts of asset returns
+#' @param b xts of benchmark return (one benchmark)
+#' @param n number of periods for rolling window.
+#' @details
+#' Trailing r^2 to benchmark is calculated for `n` periods. If the data
+#' are monthly then `n` set to 36 is 36 months. The rolling period includes
+#' the current period: e.g., for monthly returns with `n` = 3 on June will
+#' include April, May, and June returns.
 #' @export
 roll_r2 <- function(x, b, n) {
   if (ncol(b) > 1) {
@@ -767,25 +636,35 @@ roll_r2 <- function(x, b, n) {
   }
   combo <- clean_asset_bench_rf(x, b)
   obs <- xts_to_dataframe(xts_cbind(combo$x, combo$b))
-  rcor <- slider::slide(obs[, -1, drop = FALSE], ~cor(.x), .before = n-1, .complete = TRUE)
+  rcor <- slider::slide(obs[, -1, drop = FALSE], ~cor(.x), .before = n-1,
+                        .complete = TRUE)
   rcor <- lapply(rcor, \(x) {x[, nrow(x)]})
   xcor <- do.call("rbind", rcor)
   xts(xcor^2, obs$Date[n:nrow(obs)])
 }
 
-#' @title Rolling returns
+#' @title Rolling trailing returns
 #' @param x xts of returns
-#' @param n number of periods for rolling calc window
+#' @param n number of periods for rolling calc window, see details
 #' @param b optional benchmark to transform to active return
-#' @param period frequency, default is days
+#' @param freq string: days, weeks, months, quarters, years
+#' @details
+#' If frequency is "months" and n = 12, a rolling 12 month return is
+#' calculated. Note frequency will not change the frequency, it should
+#' match the return periodicity. Frequency is used to determine if the
+#' returns should be annualized, i.e., if the period is longer than 1 year.
+#' Rolling return periods for less than 1 year will not be annualized.
+#' The rolling period includes the current period: e.g.,
+#' for monthly returns with `n` = 3 on June will include April, May, and
+#' June returns.
 #' @export
-roll_ret <- function(x, n, b = NULL, period = "days") {
+roll_ret <- function(x, n, b = NULL, freq = "days") {
   if (!is.null(b)) {
     x <- excess_ret(x, b)
   }
   obs <- xts_to_dataframe(x)[, -1, drop = FALSE]
-  if (n > freq_to_scaler(period)) {
-    rl <- slider::slide(obs, ~calc_geo_ret(.x, period), .before = n-1,
+  if (n > freq_to_scaler(freq)) {
+    rl <- slider::slide(obs, ~calc_geo_ret(.x, freq), .before = n-1,
                         .complete = TRUE)
   } else {
     rl <- slider::slide(obs, ~apply(.x+1, 2, prod)-1, .before = n-1,
@@ -795,32 +674,60 @@ roll_ret <- function(x, n, b = NULL, period = "days") {
   xts(rr, zoo::index(x)[n:nrow(x)])
 }
 
-
+#' @title Rolling Volatility
+#' @param x xts of returns
+#' @param n number of periods for rolling calc window, see details
+#' @param b optional benchmark to transform to active return
+#' @param freq string: days, weeks, months, quarters, years
+#' @details
+#' If frequency is "months" and n = 12, a rolling 12 month volatility is
+#' calculated. If `b` is specified then the calculation will be the volatility
+#' of the active return to the benchmark, i.e., tracking error. Note frequency
+#' will not change the frequency, it is used to annaulize the volatility.
+#' The rolling period includes the current period: e.g.,
+#' for monthly returns with `n` = 3 on June will include April, May, and
+#' June returns.
 #' @export
-roll_vol <- function(x, n, b = NULL, period = "days") {
+roll_vol <- function(x, n, b = NULL, freq = "days") {
   if (!is.null(b)) {
     x <- excess_ret(x, b)
   }
   obs <- xts_to_dataframe(x)[, -1, drop = FALSE]
-  rl <- slider::slide(obs, ~calc_vol(.x, period), .before = n - 1,
+  rl <- slider::slide(obs, ~calc_vol(.x, freq), .before = n - 1,
                       .complete = TRUE)
   rv <- do.call("rbind", rl)
   xts(rv, zoo::index(x)[n:nrow(x)])
 }
 
-
+#' @title Rolling Downside Volatility
+#' @param x xts of returns
+#' @param n number of periods for rolling calc window, see details
+#' @param b optional benchmark to transform to active return
+#' @param freq string: days, weeks, months, quarters, years
+#' @details
+#' If frequency is "months" and n = 12, a rolling 12 month volatility when
+#' the asset is down is calculated. If `b` is specified then the calculation
+#' will be the volatility of the active return to the benchmark. Note frequency
+#' will not change the frequency, it is used to annaulize the volatility.
+#' The rolling period includes the current period: e.g.,
+#' for monthly returns with `n` = 3 on June will include April, May, and
+#' June returns.
 #' @export
-roll_down_vol <- function(x, n, b = NULL, period = "days") {
+roll_down_vol <- function(x, n, b = NULL, freq = "days") {
   if (!is.null(b)) {
     x <- excess_ret(x, b)
   }
   obs <- xts_to_dataframe(x)[, -1, drop = FALSE]
-  rl <- slider::slide(obs, ~calc_down_vol(.x, period), .before = n - 1,
+  rl <- slider::slide(obs, ~calc_down_vol(.x, freq), .before = n - 1,
                       .complete = TRUE)
   rv <- do.call("rbind", rl)
   xts(rv, zoo::index(x)[n:nrow(x)])
 }
 
+#' @title Rolling Style Analysis
+#' @param x xts of asset returns to explain
+#' @param b xts of index or factor returns used to track `x`
+#' @param n number of observations in rolling period
 #' @export
 roll_style <- function(x, b, n) {
   combo <- clean_asset_bench_rf(x, b)
@@ -835,4 +742,3 @@ roll_style <- function(x, b, n) {
   colnames(res) <- colnames(obs)[-1]
   return(res)
 }
-

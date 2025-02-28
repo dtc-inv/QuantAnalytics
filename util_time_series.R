@@ -482,11 +482,14 @@ clean_ret <- function(x, trunc_start = TRUE, trunc_end = TRUE, eps = 0.05,
     ret <- xts()
     miss <- x
     warning("all returns are missing")
-  } else {
+  } else if (any(miss_col)) {
     ret <- x[, !miss_col]
     miss <- x[, miss_col]
-    warning(paste0(paste0(colnames(x)[miss_col], collapse = " ,"), "
-                   exceeded eps threshold for missing observations."))
+    miss_nm <- paste0(paste0(colnames(x)[miss_col], collapse = " ,"))
+    warning(paste0(miss_nm, " exceeded eps threshold for missing
+                   observations."))
+  } else {
+    miss <- xts()
   }
   res <- list()
   res$ret <- ret
