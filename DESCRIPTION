@@ -8,5 +8,5 @@ Description: Time-series analysis of financial returns.
 License: GPLv3
 Encoding: UTF-8
 LazyData: true
-Depends: xts, readxl, slider
+Depends: xts, readxl, slider, lubridate
 RoxygenNote: 7.3.2

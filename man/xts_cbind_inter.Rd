@@ -12,8 +12,8 @@ xts_cbind_inter(x, y, eps = 0.05)
 \item{y}{xts object}
 }
 \value{
-list containing intersection of returns and columns that were removed
-  due to too many missing values (if any).
+list containing intersection of returns and columns that were
+  removed due to too many missing values (if any).
 }
 \description{
 Column bind the intersection of two xts objects

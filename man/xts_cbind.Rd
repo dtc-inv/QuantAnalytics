@@ -18,7 +18,7 @@ xts with `cbind(x, y)` with original column names of `x` and `y`
 Column bind xts objects while preserving columns names
 }
 \details{
-Column names will get converted to `data.frame` formats when `cbind` is called
-on the xts object. E.g., Small Cap will be Small.Cap. This method preserves
-the spaces or special characters in the original column names.
+Column names will get converted to `data.frame` formats when `cbind` is
+called on the xts object. E.g., Small Cap will be Small.Cap. This method
+preserves the spaces or special characters in the original column names.
 }

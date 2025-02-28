@@ -4,7 +4,7 @@
 \alias{clean_ret}
 \title{Clean returns with missing values}
 \usage{
-clean_ret(x, trunc_start = TRUE, trunc_end = TRUE, eps = 0.05)
+clean_ret(x, trunc_start = TRUE, trunc_end = TRUE, eps = 0.05, ret_fill = 0)
 }
 \arguments{
 \item{x}{xts to clean}
@@ -15,6 +15,9 @@ clean_ret(x, trunc_start = TRUE, trunc_end = TRUE, eps = 0.05)
 
 \item{eps}{threshold of missing values tolerated. See details and
 examples.}
+
+\item{ret_fill}{numeric value to fill missing returns within threshold,
+see details.}
 }
 \description{
 Clean returns with missing values
@@ -23,7 +26,7 @@ Clean returns with missing values
 Default `eps` is 0.05 meaning that if more than 5% of the number
   of observations (rows) for each field (column) are missing then the
   column is removed. Otherwise, if 5% or less of observations are missing,
-  then missing values are filled with zeros.
+  then missing values are filled with `ret_fill` (zero by default).
 }
 \examples{
 x <- x[1:10, 1:3]
