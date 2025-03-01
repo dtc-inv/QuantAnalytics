@@ -7,9 +7,9 @@
 xts_rbind(new, old, is_xts = TRUE, backfill = FALSE)
 }
 \arguments{
-\item{new}{xts with older time-series}
+\item{new}{xts with more recent time-series}
 
-\item{old}{xts with newer time-series}
+\item{old}{xts with older time-series}
 
 \item{is_xts}{boolean, default is TRUE for new and old to be xts objects.
 If set to FALSE, assumes `new` and `old` are data.frames with dates in
