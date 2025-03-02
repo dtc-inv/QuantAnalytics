@@ -146,8 +146,8 @@ xts_to_tidy <- function(x) {
 # Combine xts ----
 
 #' @title Row bind two xts objects
-#' @param new xts with older time-series
-#' @param old xts with newer time-series
+#' @param new xts with more recent time-series
+#' @param old xts with older time-series
 #' @param is_xts boolean, default is TRUE for new and old to be xts objects.
 #'   If set to FALSE, assumes `new` and `old` are data.frames with dates in
 #'   first column named `Date`. See `xts_to_dataframe` and `dataframe_to_xts`
@@ -250,7 +250,7 @@ price_to_ret <- function(x) {
 #' ret <- price_to_ret(price)
 #' head(ret)
 #' @export
-ret_to_price <- function(x) {
+ret_to_price <- function(x, na_rm = FALSE) {
   price <- apply(x + 1, 2, cumprod)
   first_row <- xts(matrix(1, ncol = ncol(x)),
                    last_us_trading_day(zoo::index(x)[1]))
@@ -304,7 +304,7 @@ last_us_trading_day <- function(as_of = NULL) {
 #' @return xts object with new frequency
 #' @importFrom lubridate ceiling_date
 #' @details most recent period will be all the returns available for that
-#'   period. E.g., if changing to annaul returns the last year will be YTD.
+#'   period. E.g., if changing to annual returns the last year will be YTD.
 #'   If the first year of data is not for a full year it will not be included.
 #' @examples
 #' data(assets)
@@ -314,29 +314,63 @@ last_us_trading_day <- function(as_of = NULL) {
 #' tail(x)
 #' change_freq(x, freq = "years")
 #' @export
-change_freq <- function(x, freq = 'months', dtype = c('return', 'price')) {
+change_freq <- function(x, freq = "months", dtype = c("return", "price")) {
   freq <- check_freq(freq)
-  x[is.na(x)] <- 0
-  dtype <- tolower(dtype[1])
-  if (dtype == 'return') {
-    price <- ret_to_price(x)
+  dtype = tolower(dtype[1])
+  if (dtype == "return") {
+    res <- period.apply(x, endpoints(x, freq), colProd)
+    res[res == 0] <- NA
+  } else if (dtype == "price") {
+    res <- to.period(x, freq)
   } else {
-    price <- x
+    error("incorrect dtype, must be 'return' or 'price'")
   }
-  eo <- endpoints(price, on = freq)
-  price_new_freq <- price[eo, ]
-  if (dtype == 'return') {
-    data_out <- price_to_ret(price_new_freq)
-  } else {
-    data_out <- price_new_freq
+  if (freq %in% c("months", "quarters", "years")) {
+    res <- xts_eo_month(res)
   }
-  if (freq %in% c('months', 'quarters', 'years')) {
-    zoo::index(data_out) <- lubridate::ceiling_date(zoo::index(data_out),
-                                                    'months') - 1
-  }
-  is_miss <- data_out[data_out == 0] <- NA
-  return(data_out)
+  return(res)
 }
+
+#' @title Convert dates to end of month
+#' @param x date or vector of dates
+#' @return dates shifted to end of month
+#' @examples
+#' eo_month(as.Date("2024-11-29"))
+#' @export
+eo_month <- function(x) {
+  lubridate::ceiling_date(x, "months") - 1
+}
+
+#' @title Convert xts index to end of month dates
+#' @param x xts object
+#' @return xts object with end of month dates as index
+#' @export
+xts_eo_month <- function(x) {
+  zoo::index(x) <- eo_month(zoo::index(x))
+  return(x)
+}
+
+#' @title Calculate product of each column
+#' @param x matrix, dataframe, or xts with numeric columns
+#' @param add_1 boolean to add 1 for geometric product of returns
+#' @param na_rm boolean to remove NA values, passed through to na.rm of prod
+#'   function
+#' @return vector of column products
+#' @examples
+#' data(assets)
+#' colProd(x)
+#' @export
+colProd <- function(x, add_1 = TRUE, na_rm = TRUE) {
+  if (add_1) {
+    x <- x + 1
+  }
+  res <- apply(x, 2, prod, na.rm = na_rm)
+  if (add_1) {
+    res <- res - 1
+  }
+  return(res)
+}
+
 
 #' @title Change Character Frequency into Numeric Scaler
 #' @param freq string: days, weeks, months, quarters, years
